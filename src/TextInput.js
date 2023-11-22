@@ -1,15 +1,28 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 function TextInput() {
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isFetchingCharacter, setIsFetchingCharacter] = useState(false);
+    const [dotCount, setDotCount] = useState(0);
     const abortControllerRef = useRef(null); // Reference to the abort controller
+    const dotIntervalRef = useRef(null); // Reference to the interval for dots
+
+    useEffect(() => {
+        if (isLoading) {
+            dotIntervalRef.current = setInterval(() => {
+                setDotCount(prevCount => (prevCount + 1) % 4); // Cycles 0, 1, 2, 3, 0, 1, 2, 3, ...
+            }, 500); // Update every 500ms
+        } else {
+            clearInterval(dotIntervalRef.current);
+            setDotCount(0);
+        }
+
+        return () => clearInterval(dotIntervalRef.current);
+    }, [isLoading]);
 
     // Function to handle the submit action
     const handleSubmit = async () => {
         setIsLoading(true);
-        setIsFetchingCharacter(false);
         setInputValue(''); // Clear the text field for the encoded text
         abortControllerRef.current = new AbortController(); // Create a new abort controller
 
@@ -32,9 +45,7 @@ function TextInput() {
 
             const readData = async () => {
                 try {
-                    setIsFetchingCharacter(true);
                     const { value, done } = await reader.read();
-                    setIsFetchingCharacter(false);
                     if (done) {
                         setIsLoading(false);
                         return;
@@ -64,23 +75,23 @@ function TextInput() {
             abortControllerRef.current.abort(); // Abort the fetch request
         }
         setIsLoading(false);
-        setIsFetchingCharacter(false);
         setInputValue('Cancelled by user');
     };
 
     // Function to clear the input field
     const handleClear = () => {
         setInputValue('');
-        setIsFetchingCharacter(false);
+        setIsLoading(false);
     };
 
     return (
         <div>
             <input
                 type="text"
-                value={inputValue + (isFetchingCharacter ? '...' : '')}
+                value={inputValue + '.'.repeat(dotCount)}
                 onChange={(e) => setInputValue(e.target.value)}
                 disabled={isLoading}
+                style={{ width: '500px' }}
             />
             <button onClick={handleSubmit} disabled={isLoading}>Convert</button>
             <button onClick={handleClear} disabled={isLoading}>Clear</button>
