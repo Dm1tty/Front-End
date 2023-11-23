@@ -28,7 +28,7 @@ function TextInput() {
         setIsLoading(true);
         setInputValue('');
 
-        // abort controller for emitter interruptor
+        // aborting controller for emitter
         abortControllerRef.current = new AbortController();
 
         try {
